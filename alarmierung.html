@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alarmierungsformular</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .info-text {
+            font-size: 14px;
+            color: #cc0000;
+            margin-top: 20px;
+            text-align: center;
+            background-color: #fff3f3;
+            padding: 10px;
+            border: 1px solid #cc0000;
+            border-radius: 5px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        select, input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #ff4c4c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #ff1a1a;
+        }
+        @media screen and (max-width: 600px) {
+            h1 {
+                font-size: 24px;
+            }
+            select, input, button {
+                font-size: 14px;
+                padding: 12px;
+            }
+        }
+        .status-message {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>SAN DRK Ottenau Alarmierung</h1>
+    <p class="info-text">
+        Achtung: Der Missbrauch dieses Formulars ist strafbar! Bitte verwenden Sie dieses Formular nur im Falle eines echten Notfalls.
+    </p>
+    <form id="alarmForm">
+        <label for="unfallort">Unfallort:</label>
+        <select id="unfallort" required>
+            <option value="">Bitte wählen...</option>
+            <option value="Halle Eingangsbereich">Halle Eingangsbereich</option>
+            <option value="Halle Bühne">Halle Bühne</option>
+            <option value="Halle Bar hinten">Halle Bar hinten</option>
+            <option value="Halle Bar vorne">Halle Bar vorne</option>
+            <option value="Halle Toilette Frau">Halle Toilette Frau</option>
+            <option value="Halle Toilette Mann">Halle Toilette Mann</option>
+            <option value="Außenbereich Eingang">Außenbereich Eingang</option>
+            <option value="Außenbereich Parkplatz">Außenbereich Parkplatz</option>
+        </select>
+
+        <label for="verletzung">Verletzung:</label>
+        <select id="verletzung" required>
+            <option value="">Bitte wählen...</option>
+            <option value="Bewusstlos">Bewusstlos</option>
+            <option value="Alkohol">Alkohol</option>
+            <option value="Schnittwunde">Schnittwunde</option>
+            <option value="Verstauchung">Verstauchung</option>
+            <option value="Sonstiges">Sonstiges</option>
+        </select>
+
+        <label for="priorisierung">Priorisierung:</label>
+        <select id="priorisierung" required>
+            <option value="">Bitte wählen...</option>
+            <option value="Niedrig">Niedrig</option>
+            <option value="Normal">Normal</option>
+            <option value="Hoch">Hoch</option>
+        </select>
+
+        <label for="telefon">Telefonnummer für Rückfragen:</label>
+        <input type="tel" id="telefon" placeholder="z. B. +49123456789" required>
+
+        <button type="submit">Alarm senden</button>
+    </form>
+
+    <div id="statusMessage" class="status-message" style="display: none;"></div>
+
+    <script>
+        document.getElementById("alarmForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const unfallort = document.getElementById("unfallort").value;
+            const verletzung = document.getElementById("verletzung").value;
+            const priorisierung = document.getElementById("priorisierung").value;
+            const telefon = document.getElementById("telefon").value;
+
+            if (!unfallort || !verletzung || !priorisierung || !telefon) {
+                alert("Bitte füllen Sie alle Felder aus.");
+                return;
+            }
+
+            const alarmData = {
+                title: "Unfallmeldung",
+                message: `Ort: ${unfallort}, Verletzung: ${verletzung}, Priorisierung: ${priorisierung}`,
+                priority: priorisierung,
+                customData: {
+                    Unfallort: unfallort,
+                    Verletzung: verletzung,
+                    Telefonnummer: telefon,
+                    Priorisierung: priorisierung
+                }
+            };
+
+            const url = "https://connect.signl4.com/webhook/e9e3iuf6wn";
+
+            fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(alarmData)
+            })
+            .then(response => {
+                const statusMessage = document.getElementById("statusMessage");
+                if (response.ok) {
+                    statusMessage.textContent = "Alarm erfolgreich gesendet!";
+                    statusMessage.className = "status-message status-success";
+                    statusMessage.style.display = "block";
+                } else {
+                    statusMessage.textContent = `Fehler beim Senden des Alarms: ${response.status}`;
+                    statusMessage.className = "status-message status-error";
+                    statusMessage.style.display = "block";
+                }
+            })
+            .catch(error => {
+                const statusMessage = document.getElementById("statusMessage");
+                statusMessage.textContent = `Netzwerkfehler: ${error}`;
+                statusMessage.className = "status-message status-error";
+                statusMessage.style.display = "block";
+            });
+        });
+    </script>
+</body>
+</html>
